@@ -1,0 +1,49 @@
+Type: OpsTemplate
+Version: "2024-11-11"
+
+Tasks:
+  - Name: Run
+    Description: "执行命令"
+    Action: TC::ExecuteAPI
+    Properties:
+      Service: tat
+      Action: RunCommand
+      Version: "2020-10-28"
+      Region: "{{ .Cloudapp.Terraform.resource.tencentcloud_instance.main_cvm.region }}"
+      Parameters:
+        Content:
+          Fn::Base64Encode: |
+            echo 'Hello, World!' | tee ~/hello.txt
+        InstanceIds:
+          - "{{ .Cloudapp.Terraform.resource.tencentcloud_instance.main_cvm.id }}"
+        Timeout: 30
+    Outputs:
+      InvocationId:
+        ValueSelector: ".InvocationId"
+
+  - Name: Wait
+    Description: "等待命令执行"
+    Action: TC::WaitFor
+    Properties:
+      Service: tat
+      Action: DescribeInvocations
+      Version: "2020-10-28"
+      Region: "{{ .Cloudapp.Terraform.resource.tencentcloud_instance.main_cvm.region }}"
+      Parameters:
+        InvocationIds:
+          - "{{ .Run.InvocationId }}"
+      ValueSelector: ".InvocationSet[0].InvocationStatus"
+      DesiredValues:
+        - SUCCESS
+      StopRetryValues:
+        - FAILED
+        - TIMEOUT
+        - PARTIAL_FAILED
+    Outputs:
+      Status:
+        ValueSelector: ".InvocationSet[0].InvocationStatus"
+
+Outputs:
+  Status:
+    Description: "执行状态"
+    Value: "{{ .Wait.Status }}"
