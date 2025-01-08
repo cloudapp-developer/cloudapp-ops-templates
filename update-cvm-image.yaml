@@ -1,0 +1,24 @@
+Type: OpsTemplate
+Version: '2024-11-11'
+Tasks:
+  - Name: UpdateMainCvmImage
+    Description: 更新主服务镜像
+    Action: TC::Cloudapp::UpdateCvmImage
+    Properties:
+      ImageId: img-l8og963d
+      CloudappId: '{{ .Cloudapp.CloudappId }}'
+      InstanceId: '{{ .Cloudapp.Terraform.resource.tencentcloud_instance.main_cvm.id }}'
+      Region: '{{ .Cloudapp.Terraform.resource.tencentcloud_instance.main_cvm.region }}'
+      UserData:
+        Fn::Base64Encode: '{{ .Cloudapp.Terraform.resource.tencentcloud_instance.main_cvm.user_data_raw }}'
+      # UserData:
+      #   Fn::Base64Encode: |
+      #     #!/bin/bash
+      #     echo 'Hello, World!'
+    Outputs:
+      InstanceState:
+        ValueSelector: '.InstanceState'
+Outputs:
+  InstanceState:
+    Description: 实例状态
+    Value: '{{ .UpdateMainCvmImage.InstanceState }}'
